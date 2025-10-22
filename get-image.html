@@ -1,53 +1,31 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ambil Selfie Absensi</title>
-<style>
-  video, canvas, img { width: 100%; border-radius: 8px; margin-top: 10px; }
-  button { margin-top: 10px; padding: 10px; width: 100%; border-radius: 8px; background: #0078ff; color: white; border: none; }
-</style>
+  <meta charset="UTF-8">
+  <title>Ambil Selfie Absensi</title>
 </head>
 <body>
-  <h3>Ambil Selfie</h3>
-  <video id="camera" autoplay playsinline></video>
-  <canvas id="snapshot" style="display:none;"></canvas>
-  <img id="preview" alt="Preview Foto" />
-  <button id="capture">Ambil Foto</button>
-  <button id="usePhoto" style="display:none;">Gunakan Foto</button>
+  <h3>Ambil Foto Absensi</h3>
+  <video id="video" width="320" height="240" autoplay></video><br>
+  <button id="snap">Ambil Foto</button>
+  <canvas id="canvas" width="320" height="240"></canvas>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-<script>
-const video = document.getElementById('camera');
-const canvas = document.getElementById('snapshot');
-const preview = document.getElementById('preview');
-const captureBtn = document.getElementById('capture');
-const useBtn = document.getElementById('usePhoto');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert("Izin kamera ditolak atau tidak tersedia."));
 
-// Aktifkan kamera
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(stream => video.srcObject = stream)
-  .catch(err => alert("Tidak dapat mengakses kamera: " + err));
+    document.getElementById('snap').addEventListener('click', () => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/png');
+      alert("Foto berhasil diambil!");
 
-// Ambil foto
-captureBtn.onclick = () => {
-  const context = canvas.getContext('2d');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL('image/png');
-  preview.src = dataUrl;
-  preview.style.display = 'block';
-  useBtn.style.display = 'block';
-  captureBtn.style.display = 'none';
-};
-
-// Kirim ke Opal (pakai parent.postMessage)
-useBtn.onclick = () => {
-  const dataUrl = preview.src;
-  window.parent.postMessage({ type: "SELFIE_CAPTURED", image: dataUrl }, "*");
-  alert("✅ Foto dikirim ke aplikasi absensi!");
-};
-</script>
+      // Kirim hasil ke parent (Opal iframe)
+      window.parent.postMessage(imageData, "*");
+    });
+  </script>
 </body>
 </html>
